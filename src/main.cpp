@@ -1,11 +1,19 @@
 // File: main.cpp
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#define IMGUI_IMPL_OPENGL_LOADER_GLAD
+#include <imgui.h>
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 #include <iostream>
 #include "shader.h"
+#include "Grid.h"
+#include "Cube.h"
+#include <vector>
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -18,15 +26,18 @@ float yaw = -90.0f;
 float pitch = 0.0f;
 float fov = 45.0f;
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraPos = glm::vec3(0.0f, 1.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+bool mouseLocked = true;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (!mouseLocked) return;
     if (firstMouse) {
         lastX = xpos;
         lastY = ypos;
@@ -65,11 +76,26 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
         fov = 45.0f;
 }
 
+
 void processInput(GLFWwindow* window) {
+
+    static bool togglePressed = false;
+    if (glfwGetKey(window, GLFW_KEY_TAB) == GLFW_PRESS) {
+        if (!togglePressed) {
+            mouseLocked = !mouseLocked;
+            glfwSetInputMode(window, GLFW_CURSOR, mouseLocked ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+            firstMouse = true;
+            togglePressed = true;
+        }
+    }
+    else {
+        togglePressed = false;
+    }
+
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    float cameraSpeed = 2.5f * 0.016f;
+    float cameraSpeed = 2.0f * 0.016f;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -78,58 +104,18 @@ void processInput(GLFWwindow* window) {
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        cameraPos += cameraUp * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        cameraPos -= cameraUp * cameraSpeed;
 }
-
-float vertices[] = {
-    // positions
-    -0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f, -0.5f,
-     0.5f,  0.5f, -0.5f,
-     0.5f,  0.5f, -0.5f,
-    -0.5f,  0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-
-    -0.5f, -0.5f,  0.5f,
-     0.5f, -0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-    -0.5f, -0.5f,  0.5f,
-
-    -0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-    -0.5f, -0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-
-     0.5f,  0.5f,  0.5f,
-     0.5f,  0.5f, -0.5f,
-     0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
-
-    -0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f,  0.5f,
-     0.5f, -0.5f,  0.5f,
-    -0.5f, -0.5f,  0.5f,
-    -0.5f, -0.5f, -0.5f,
-
-    -0.5f,  0.5f, -0.5f,
-     0.5f,  0.5f, -0.5f,
-     0.5f,  0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f, -0.5f
-};
 
 int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
 
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "3D Physics Visualizer", NULL, NULL);
     if (window == NULL) {
@@ -142,6 +128,7 @@ int main() {
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSwapInterval(1);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
@@ -150,39 +137,124 @@ int main() {
 
     glEnable(GL_DEPTH_TEST);
 
-    Shader shader("../Shaders/shader.vert", "../Shaders/shader.frag");
+    Shader shader("Shaders/shader.vert", "Shaders/shader.frag");
+    Shader gridShader("Shaders/gridShader.vert", "Shaders/gridShader.frag");
 
     unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
+    Grics::Grid grid(20);
+    std::vector<Grics::Cube> cubes;
+    cubes.emplace_back(1.0f, Grics::Vector3(0.0f, 0.5f, 0.0f));
 
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    // Setup ImGui binding
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable Keyboard Controls
+    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable Gamepad Controls
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330"); // or the GLSL version you're using
+    
+
+    // Setup style
+    ImGui::StyleColorsDark();
+    //ImGui::StyleColorsClassic();
+
 
     while (!glfwWindowShouldClose(window)) {
+        // --- ImGui frame start ---
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+
         processInput(window);
 
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.use();
+        
+       
 
-        glm::mat4 model = glm::mat4(1.0f);
         //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
         glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
         glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
-        shader.setMat4("model", model);
         shader.setMat4("view", view);
         shader.setMat4("projection", projection);
 
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for (auto& cube : cubes) {
+            cube.setDamping(0.995);
+            cube.addForce(Grics::Vector3(2.0f, 0.0f, 0.0f));
+            cube.update(0.001f);
+            cube.draw(shader);
+        }
 
+        
+
+        gridShader.use();
+        gridShader.setMat4("view", view);
+        gridShader.setMat4("projection", projection);
+
+        grid.drawGrid();
+
+        
+
+        // --- UI content ---
+        
+        static Grics::real pos[3] = { 0.0f, 0.5f, 0.0f }; // for new cube position
+        
+        static Grics::real scale[3] = { 1.0f,1.0f,1.0f };
+
+        ImGui::InputFloat3("New Cube Position", pos);
+        ImGui::InputFloat3("New Cube Scale", scale);
+        
+        if (ImGui::Button("Add Cube")) {
+            cubes.emplace_back(Grics::Vector3(scale[0],scale[1],scale[2]), Grics::Vector3(pos[0], pos[1], pos[2]));
+        }
+
+
+        if (ImGui::BeginTable("Cube Table", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+            ImGui::TableSetupColumn("Index");
+            ImGui::TableSetupColumn("X");
+            ImGui::TableSetupColumn("Y");
+            ImGui::TableSetupColumn("Z");
+            ImGui::TableSetupColumn("Delete");
+            ImGui::TableHeadersRow();
+
+            for (size_t i = 0; i < cubes.size(); ++i) {
+                const auto& pos = cubes[i].getPosition(); // Or cubes[i].position if it's public
+                
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(0); ImGui::Text("%zu", i);
+                ImGui::TableSetColumnIndex(1); ImGui::Text("%.2f", pos.x);
+                ImGui::TableSetColumnIndex(2); ImGui::Text("%.2f", pos.y);
+                ImGui::TableSetColumnIndex(3); ImGui::Text("%.2f", pos.z);
+                ImGui::TableSetColumnIndex(4);
+                ImGui::PushID(static_cast<int>(i));
+                if (ImGui::Button("Delete")) {
+                    cubes.erase(cubes.begin() + i);
+                    ImGui::PopID(); // balance PushID before breaking
+                    break; // Important: exit loop to avoid iterator invalidation
+                }
+                ImGui::PopID();
+            }
+
+            ImGui::EndTable();
+        }
+
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+       
+
+        
+
+        // --- ImGui frame render ---
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+
+       
         glfwSwapBuffers(window);
         glfwPollEvents();
     }

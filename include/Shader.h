@@ -15,7 +15,19 @@ public:
 
     Shader(const char* vertexPath, const char* fragmentPath) {
         std::string vertexCode, fragmentCode;
-        std::ifstream vShaderFile(vertexPath), fShaderFile(fragmentPath);
+        std::ifstream vShaderFile(vertexPath), fShaderFile(fragmentPath);\
+
+        vShaderFile.open(vertexPath);
+        fShaderFile.open(fragmentPath);
+
+        if (!vShaderFile.is_open()) {
+            std::cerr << "ERROR: Failed to open vertex shader file: " << vertexPath << std::endl;
+            return;
+        }
+        if (!fShaderFile.is_open()) {
+            std::cerr << "ERROR: Failed to open fragment shader file: " << fragmentPath << std::endl;
+            return;
+        }
 
         std::stringstream vShaderStream, fShaderStream;
         vShaderStream << vShaderFile.rdbuf();
