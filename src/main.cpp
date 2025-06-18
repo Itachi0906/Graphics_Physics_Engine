@@ -13,6 +13,8 @@
 #include "shader.h"
 #include "Grid.h"
 #include "Cube.h"
+#include "ParticleForceGenerator.h"
+#include "ParticleContacts.h"
 #include <vector>
 
 const unsigned int SCR_WIDTH = 800;
@@ -144,6 +146,7 @@ int main() {
     Grics::Grid grid(20);
     std::vector<Grics::Cube> cubes;
     cubes.emplace_back(1.0f, Grics::Vector3(0.0f, 0.5f, 0.0f));
+  
 
     // Setup ImGui binding
     ImGui::CreateContext();
@@ -159,8 +162,7 @@ int main() {
     // Setup style
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
-
-
+    
     while (!glfwWindowShouldClose(window)) {
         // --- ImGui frame start ---
         ImGui_ImplOpenGL3_NewFrame();
@@ -174,8 +176,7 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.use();
-        
-       
+      
 
         //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
         glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
@@ -186,12 +187,11 @@ int main() {
 
         for (auto& cube : cubes) {
             cube.setDamping(0.995);
-            cube.addForce(Grics::Vector3(2.0f, 0.0f, 0.0f));
+            //cube.setVelocity(Grics::Vector3(2.0f,0.0f,0.0f));
             cube.update(0.001f);
             cube.draw(shader);
         }
 
-        
 
         gridShader.use();
         gridShader.setMat4("view", view);

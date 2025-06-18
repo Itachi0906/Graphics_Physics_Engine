@@ -145,6 +145,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Particle.cpp" />
     <ClCompile Include="src\ParticleForceGenerator.cpp" />
+    <ClCompile Include="src\ParticleWorld.cpp" />
     <ClCompile Include="Vendor\glad\src\glad.c" />
     <ClCompile Include="Vendor\imgui2\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="Vendor\imgui2\backends\imgui_impl_opengl3.cpp" />
@@ -161,6 +162,7 @@
     <ClInclude Include="include\Particle.h" />
     <ClInclude Include="include\ParticleContacts.h" />
     <ClInclude Include="include\ParticleForceGenerator.h" />
+    <ClInclude Include="include\ParticleWorld.h" />
     <ClInclude Include="include\precision.h" />
     <ClInclude Include="include\Shader.h" />
   </ItemGroup>
