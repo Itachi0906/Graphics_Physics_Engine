@@ -3,6 +3,7 @@
 #define GRICS_PARTICLE_H
 
 #include "core.h"
+#include "Mesh.h"
 #include <vector>
 #include <cassert>
 
@@ -16,7 +17,6 @@ namespace Grics {
     private:
         Vector3 gravity = Vector3(0.0f,-9.81f,0.0f);
 
-    public:
         /**
          * Holds the linear position of this particle in
          * world space
@@ -71,6 +71,10 @@ namespace Grics {
         */
         Vector3 forceAccum;
 
+        void updateGeometry(Shader &shader);
+    public:
+
+
         /** 
         * the force to apply 
         */
@@ -84,6 +88,7 @@ namespace Grics {
         */
         void update(real dt);
         void clearAccumulator();
+        void drawParticle(Mesh m,Mesh::shapeType shape,Shader &shader);
         
         /* Setter methods */
         /**

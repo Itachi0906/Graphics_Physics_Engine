@@ -7,6 +7,7 @@ bool Mesh::initialized = false;
 
 void Mesh::initMesh()
 {
+
     generateAllShapes();
 
     /**
@@ -120,12 +121,51 @@ std::vector<unsigned int> Mesh::generateCubeIndices()
 
 std::vector<real> Mesh::generateSphere()
 {
-    return std::vector<real>();
+    int stackCount = 64;
+    int sectorCount = 128;
+    real radius = 1.0f;
+    std::vector<real> sphereVertices;
+    for (int i = 0; i <= stackCount; ++i) {
+        real stackAngle = PI/2 - i * PI/stackCount;
+        real xy = radius * cosf(stackAngle);
+        real z = radius * sinf(stackAngle);
+
+        for (int j = 0; j <= sectorCount; ++j) {
+            real sectorAngle = j * 2 * PI/sectorCount;
+
+            real x = xy * cosf(sectorAngle);
+            real y = xy * sinf(sectorAngle);
+            sphereVertices.push_back(x);
+            sphereVertices.push_back(y);
+            sphereVertices.push_back(z);
+        }
+    }
+    return sphereVertices;
 }
 
 std::vector<unsigned int> Mesh::generateSphereIndices()
 {
-    return std::vector<unsigned int>();
+    int stackCount = 64;
+    int sectorCount = 128;
+    std::vector<unsigned int> sphereIndices;
+    for (int i = 0; i < stackCount; ++i) {
+        int k1 = i * (sectorCount + 1);
+        int k2 = k1 + sectorCount + 1;
+
+        for (int j = 0; j < sectorCount; ++j, ++k1, ++k2) {
+            if (i != 0) {
+                sphereIndices.push_back(k1);
+                sphereIndices.push_back(k2);
+                sphereIndices.push_back(k1 + 1);
+            }
+            if (i != (stackCount - 1)) {
+                sphereIndices.push_back(k1 + 1);
+                sphereIndices.push_back(k2);
+                sphereIndices.push_back(k2 + 1);
+            }
+        }
+    }
+    return sphereIndices;
 }
 
 std::vector<real> Mesh::generateCylinder()
@@ -179,15 +219,29 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
+    //glDeleteVertexArrays(1, &VAO);
+    //glDeleteBuffers(1, &VBO);
+    //glDeleteBuffers(1, &EBO);
 }
 
-void Mesh::drawGeometry(shapeType geometryType)
+
+glm::vec3 toGLM(const Vector3& v) {
+    return glm::vec3(v.x, v.y, v.z);
+}
+  
+
+void Mesh::drawGeometry(shapeType geometryType, Shader& shader, const Vector3& position, const Vector3& scale)
 {
+
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::translate(model, toGLM(position));
+    model = glm::scale(model, toGLM(scale));
+
+    shader.setMat4("model", model);
     GLuint count = shapeDrawData[geometryType].first;
     GLuint offset = shapeDrawData[geometryType].second;
+
     glBindVertexArray(VAO);
+    //glDrawArrays(GL_TRIANGLES, 0, count);
     glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, (void*)(offset * sizeof(unsigned int)));
 }

@@ -179,6 +179,33 @@ namespace Grics {
             *this = Vector3();
         }
     };
+
+
+    /** 
+    * Holds an inertia tensor, consisting of a 3x3 row-major matrix. 
+    * This matrix is not padding to produce an aligned structure, since 
+    * it is most commonly used with a mass (single real) and two 
+    * damping coefficients to make the 12-element characteristics array 
+    * of a Rigid Body.
+    */
+    class Matrix3 {
+        /**
+        * Holds the tensor matrix in array form.
+        */
+        real data[9];
+    };
+
+    /** 
+    * Holds a transform matrix, consisting of a rotation matrix and 
+    * a position. The matrix has 12 elements; it is assumed that the 
+    * remaining four are (0,0,0,1), producing a homogenous matrix. 
+    */
+    class Matrix4 {
+        /**
+        * Holds the transform matrix in array form.
+        */
+        real data[12];
+    };
 }
 
 #endif

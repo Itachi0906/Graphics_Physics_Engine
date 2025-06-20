@@ -157,6 +157,7 @@ int main() {
     Shader shader("Shaders/shader.vert", "Shaders/shader.frag");
     Shader gridShader("Shaders/gridShader.vert", "Shaders/gridShader.frag");
 
+    Grics::Mesh m;
     unsigned int VBO, VAO;
     Grics::Grid grid(20);
     std::vector<Grics::Cube> cubes;
@@ -164,13 +165,19 @@ int main() {
     cubes.emplace_back(1.0f, Grics::Vector3(5.0f, 0.5f, 0.0f));
 
     Grics::ParticleWorld particleWorld(1,1);
-    Grics::Particle p1, p2;
+    Grics::Particle p1, p2 , p3;
     p1.setPosition(Grics::Vector3(0.0f, 0.5f, 0.0f));
     p2.setPosition(Grics::Vector3(2.0f, 0.5f, 0.0f));
+    p3.setPosition(Grics::Vector3(4.0f, 0.5f, 0.0f));
+    p1.setScale(Grics::Vector3(1.0f, 1.0f, 1.0f));
+    p2.setScale(Grics::Vector3(1.0f, 1.0f, 1.0f));
+    p3.setScale(Grics::Vector3(1.0f, 1.0f, 1.0f));
     p1.setDamping(0.99);
     p2.setDamping(0.99);
+    p3.setDamping(0.99);
     p1.setMass(1.0f);
     p2.setMass(1.0f);
+    p3.setMass(1.0f);
 
     particleWorld.getContactGenerators().push_back(new Grics::ParticleCubeContactGenerator(&p1, &p2,1.0f));
 
@@ -182,6 +189,7 @@ int main() {
 
     p1.setVelocity(Grics::Vector3(2.0f, 0.0f, 0.0f));
     p2.setVelocity(Grics::Vector3(0.0f, 0.0f, 0.0f));
+    p3.setVelocity(Grics::Vector3(0.0f, 0.0f, 0.0f));
     // Setup ImGui binding
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -223,13 +231,16 @@ int main() {
             shader.setMat4("view", view);
             shader.setMat4("projection", projection);
 
-            for (auto& cube : cubes) {
-                //cube.setDamping(0.995);
-                ////cube.setVelocity(Grics::Vector3(2.0f,0.0f,0.0f));
-                //cube.update(0.001f);
-                cube.draw(shader);
-            }
+            //for (auto& cube : cubes) {
+            //    //cube.setDamping(0.995);
+            //    ////cube.setVelocity(Grics::Vector3(2.0f,0.0f,0.0f));
+            //    //cube.update(0.001f);
+            //    cube.draw(shader);
+            //}
 
+            p1.drawParticle(m, m.CUBE, shader);
+            p2.drawParticle(m, m.CUBE, shader);
+            p3.drawParticle(m, m.SPHERE, shader);
 
             particleWorld.startFrame();
 

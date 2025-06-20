@@ -104,7 +104,7 @@ namespace Grics {
         */
 		//glDeleteBuffers(1, &m_VBO);
 	}
-    
+
     glm::vec3 toGLM(const Vector3& v) {
         return glm::vec3(v.x, v.y, v.z);
     }
@@ -113,8 +113,8 @@ namespace Grics {
 	void Cube::draw(Shader &shader)
 	{
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, toGLM(position));
-        model = glm::scale(model, toGLM(scale));
+        model = glm::translate(model, toGLM(getPosition()));
+        model = glm::scale(model, toGLM(getScale()));
 
         shader.setMat4("model", model);
 

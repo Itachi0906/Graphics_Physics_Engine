@@ -2,6 +2,7 @@
 #include <iostream>
 
 namespace Grics{
+     
     void Particle::addForce(const Vector3 &forceVector)
     {
         forceAccum += forceVector;
@@ -20,7 +21,7 @@ namespace Grics{
         resultingAcc.addScaledVector(forceAccum, inverseMass);
         velocity.addScaledVector(resultingAcc, dt);
 
-       // velocity *= real_pow(damping, dt);
+       velocity *= real_pow(damping, dt);
 
         clearAccumulator();
     }
@@ -28,6 +29,10 @@ namespace Grics{
     void Particle::clearAccumulator()
     {
         forceAccum.clear();
+    }
+    void Particle::drawParticle(Mesh m,Mesh::shapeType shape, Shader &shader)
+    {
+        m.drawGeometry(shape,shader,position,scale);
     }
     void Particle::setPosition(const Vector3& position)
     {

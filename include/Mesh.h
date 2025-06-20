@@ -3,6 +3,7 @@
 #define GRICS_MESH_H
 
 #include "Shader.h"
+#include "core.h"
 #include "precision.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -24,7 +25,7 @@ namespace Grics {
 
 		Mesh();
 		~Mesh();
-		void drawGeometry(shapeType GeometryType);
+		void drawGeometry(shapeType, Shader& , const Vector3&, const Vector3&);
 		
 	private:
 		static GLuint VBO, VAO, EBO;
