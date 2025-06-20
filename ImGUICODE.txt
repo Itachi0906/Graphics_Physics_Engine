@@ -1,0 +1,57 @@
+// --- ImGui frame start ---
+ImGui_ImplOpenGL3_NewFrame();
+ImGui_ImplGlfw_NewFrame();
+ImGui::NewFrame();
+
+
+// --- UI content ---
+
+static Grics::real pos[3] = { 0.0f, 0.5f, 0.0f }; // for new cube position
+
+static Grics::real scale[3] = { 1.0f,1.0f,1.0f };
+
+ImGui::InputFloat3("New Cube Position", pos);
+ImGui::InputFloat3("New Cube Scale", scale);
+
+if (ImGui::Button("Add Cube")) {
+    cubes.emplace_back(Grics::Vector3(scale[0], scale[1], scale[2]), Grics::Vector3(pos[0], pos[1], pos[2]));
+}
+
+
+if (ImGui::BeginTable("Cube Table", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
+    ImGui::TableSetupColumn("Index");
+    ImGui::TableSetupColumn("X");
+    ImGui::TableSetupColumn("Y");
+    ImGui::TableSetupColumn("Z");
+    ImGui::TableSetupColumn("Delete");
+    ImGui::TableHeadersRow();
+
+    for (size_t i = 0; i < cubes.size(); ++i) {
+        const auto& pos = cubes[i].getPosition(); // Or cubes[i].position if it's public
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0); ImGui::Text("%zu", i);
+        ImGui::TableSetColumnIndex(1); ImGui::Text("%.2f", pos.x);
+        ImGui::TableSetColumnIndex(2); ImGui::Text("%.2f", pos.y);
+        ImGui::TableSetColumnIndex(3); ImGui::Text("%.2f", pos.z);
+        ImGui::TableSetColumnIndex(4);
+        ImGui::PushID(static_cast<int>(i));
+        if (ImGui::Button("Delete")) {
+            cubes.erase(cubes.begin() + i);
+            ImGui::PopID(); // balance PushID before breaking
+            break; // Important: exit loop to avoid iterator invalidation
+        }
+        ImGui::PopID();
+    }
+
+    ImGui::EndTable();
+}
+
+ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+
+
+
+// --- ImGui frame render ---
+ImGui::Render();
+ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

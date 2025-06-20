@@ -13,9 +13,24 @@
 #include "shader.h"
 #include "Grid.h"
 #include "Cube.h"
-#include "ParticleForceGenerator.h"
-#include "ParticleContacts.h"
+#include "ParticleWorld.h"
 #include <vector>
+#include <chrono>
+#include <thread>
+
+// Use std namespace for convenience
+using namespace std;
+using namespace std::chrono;
+
+// Fixed timestep in seconds
+const float fixedTimeStep = 0.01f;
+
+float getDeltaTime(high_resolution_clock::time_point& lastTime) {
+    high_resolution_clock::time_point currentTime = high_resolution_clock::now();
+    duration<float> delta = currentTime - lastTime;
+    lastTime = currentTime;
+    return delta.count(); // returns seconds as float
+}
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -146,8 +161,27 @@ int main() {
     Grics::Grid grid(20);
     std::vector<Grics::Cube> cubes;
     cubes.emplace_back(1.0f, Grics::Vector3(0.0f, 0.5f, 0.0f));
-  
+    cubes.emplace_back(1.0f, Grics::Vector3(5.0f, 0.5f, 0.0f));
 
+    Grics::ParticleWorld particleWorld(1,1);
+    Grics::Particle p1, p2;
+    p1.setPosition(Grics::Vector3(0.0f, 0.5f, 0.0f));
+    p2.setPosition(Grics::Vector3(2.0f, 0.5f, 0.0f));
+    p1.setDamping(0.99);
+    p2.setDamping(0.99);
+    p1.setMass(1.0f);
+    p2.setMass(1.0f);
+
+    particleWorld.getContactGenerators().push_back(new Grics::ParticleCubeContactGenerator(&p1, &p2,1.0f));
+
+    particleWorld.getParticles().push_back(&p1);
+    particleWorld.getParticles().push_back(&p2);
+
+    cubes[0].setPosition(p1.getPosition());
+    cubes[1].setPosition(p2.getPosition());
+
+    p1.setVelocity(Grics::Vector3(2.0f, 0.0f, 0.0f));
+    p2.setVelocity(Grics::Vector3(0.0f, 0.0f, 0.0f));
     // Setup ImGui binding
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -163,100 +197,58 @@ int main() {
     ImGui::StyleColorsDark();
     //ImGui::StyleColorsClassic();
     
+    float accumulator = 0.0f;
+    high_resolution_clock::time_point lastTime = high_resolution_clock::now();
+
+
     while (!glfwWindowShouldClose(window)) {
-        // --- ImGui frame start ---
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+
+        float deltaTime = getDeltaTime(lastTime);
+        accumulator += deltaTime;
+
+        while(accumulator >= fixedTimeStep)
+        {
+            processInput(window);
+
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+            shader.use();
 
 
-        processInput(window);
+            //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
+            glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+            glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
 
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            shader.setMat4("view", view);
+            shader.setMat4("projection", projection);
 
-        shader.use();
-      
-
-        //model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.5f, 1.0f, 0.0f));
-        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-        glm::mat4 projection = glm::perspective(glm::radians(fov), (float)SCR_WIDTH / SCR_HEIGHT, 0.1f, 100.0f);
-
-        shader.setMat4("view", view);
-        shader.setMat4("projection", projection);
-
-        for (auto& cube : cubes) {
-            cube.setDamping(0.995);
-            //cube.setVelocity(Grics::Vector3(2.0f,0.0f,0.0f));
-            cube.update(0.001f);
-            cube.draw(shader);
-        }
-
-
-        gridShader.use();
-        gridShader.setMat4("view", view);
-        gridShader.setMat4("projection", projection);
-
-        grid.drawGrid();
-
-        
-
-        // --- UI content ---
-        
-        static Grics::real pos[3] = { 0.0f, 0.5f, 0.0f }; // for new cube position
-        
-        static Grics::real scale[3] = { 1.0f,1.0f,1.0f };
-
-        ImGui::InputFloat3("New Cube Position", pos);
-        ImGui::InputFloat3("New Cube Scale", scale);
-        
-        if (ImGui::Button("Add Cube")) {
-            cubes.emplace_back(Grics::Vector3(scale[0],scale[1],scale[2]), Grics::Vector3(pos[0], pos[1], pos[2]));
-        }
-
-
-        if (ImGui::BeginTable("Cube Table", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg)) {
-            ImGui::TableSetupColumn("Index");
-            ImGui::TableSetupColumn("X");
-            ImGui::TableSetupColumn("Y");
-            ImGui::TableSetupColumn("Z");
-            ImGui::TableSetupColumn("Delete");
-            ImGui::TableHeadersRow();
-
-            for (size_t i = 0; i < cubes.size(); ++i) {
-                const auto& pos = cubes[i].getPosition(); // Or cubes[i].position if it's public
-                
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(0); ImGui::Text("%zu", i);
-                ImGui::TableSetColumnIndex(1); ImGui::Text("%.2f", pos.x);
-                ImGui::TableSetColumnIndex(2); ImGui::Text("%.2f", pos.y);
-                ImGui::TableSetColumnIndex(3); ImGui::Text("%.2f", pos.z);
-                ImGui::TableSetColumnIndex(4);
-                ImGui::PushID(static_cast<int>(i));
-                if (ImGui::Button("Delete")) {
-                    cubes.erase(cubes.begin() + i);
-                    ImGui::PopID(); // balance PushID before breaking
-                    break; // Important: exit loop to avoid iterator invalidation
-                }
-                ImGui::PopID();
+            for (auto& cube : cubes) {
+                //cube.setDamping(0.995);
+                ////cube.setVelocity(Grics::Vector3(2.0f,0.0f,0.0f));
+                //cube.update(0.001f);
+                cube.draw(shader);
             }
 
-            ImGui::EndTable();
+
+            particleWorld.startFrame();
+
+            particleWorld.runPhysics(fixedTimeStep);
+
+            cubes[0].setPosition(p1.getPosition());
+            cubes[1].setPosition(p2.getPosition());
+
+            gridShader.use();
+            gridShader.setMat4("view", view);
+            gridShader.setMat4("projection", projection);
+
+            grid.drawGrid();
+
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+
+            accumulator -= fixedTimeStep;
         }
-
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-       
-
-        
-
-        // --- ImGui frame render ---
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-
-       
-        glfwSwapBuffers(window);
-        glfwPollEvents();
     }
 
     glDeleteVertexArrays(1, &VAO);

@@ -5,53 +5,35 @@
 
 #include "ParticleForceGenerator.h"
 #include "ParticleContacts.h"
-
 namespace Grics {
 	/** 
 	* Keeps track of a set of particles, and provides the means to * update them all. 
 	*/
 	class ParticleWorld {
+	public:
 
-		struct particleRegistration
-		{
-			Particle* particle;
-			particleRegistration* next;
-		};
+		typedef std::vector<Particle*> Particles;
+		typedef std::vector<ParticleContactGenerator*> ContactGenerators;
+	protected:
 
-		/**
-		* Holds the list of registrations. 
-		*/
-		particleRegistration* firstParticle;
 
 		bool calculateIterations;
-
-	public:
-		/** 
-		* Creates a new particle simulator that can handle up to the 
-		* given number of contacts per frame. You can also optionally 
-		* give a number of contact-resolution iterations to use. If you 
-		* don’t give a number of iterations, then twice the number of
-		* contacts will be used.
-		*/
-		ParticleWorld(unsigned maxContacts, unsigned iterations = 0);
-
+		
 
 		ParticleForceRegistry registry;
 		
 		ParticleContactResolver resolver;
 
-		struct contactGenRegistration {
-			ParticleContactGenerator* gen;
-			contactGenRegistration* next;
-		};
-		/** 
-		* Holds the list of contact generators. 
-		*/
-		contactGenRegistration* firstContactGen;
+		
+		Particles particles;
+
+		ContactGenerators contactGenerators;
+
 		/** 
 		* Holds the list of contacts. 
 		*/
 		ParticleContact* contacts;
+
 		/** 
 		* Holds the maximum number of contacts allowed (i.e., the 
 		* size of the contacts array). 
@@ -59,6 +41,15 @@ namespace Grics {
 		unsigned maxContacts;
 
 	public: 
+		/**
+		* Creates a new particle simulator that can handle up to the
+		* given number of contacts per frame. You can also optionally
+		* give a number of contact-resolution iterations to use. If you
+		* don’t give a number of iterations, then twice the number of
+		* contacts will be used.
+		*/
+		ParticleWorld(unsigned maxContacts, unsigned iterations = 0);
+
 		/** 
 		* Calls each of the registered contact generators to report 
 		* their contacts. Returns the number of generated contacts. 
@@ -80,7 +71,36 @@ namespace Grics {
 		* frame added.
 		*/
 		void startFrame();
+
+		/**
+		 *  Returns the list of particles.
+		 */
+		Particles& getParticles();
+
+		/**
+		 * Returns the list of contact generators.
+		 */
+		ContactGenerators& getContactGenerators();
+
+		/**
+		 * Returns the force registry.
+		 */
+		ParticleForceRegistry& getForceRegistry();
 	};
+
+
+
+	class ParticleCubeContactGenerator : public Grics::ParticleContactGenerator {
+		Grics::Particle* p1;
+		Grics::Particle* p2;
+	    real halfExtent; // Half the length of a cube edge (e.g., 0.5 for unit cube)
+
+	public:
+		ParticleCubeContactGenerator(Grics::Particle* p1, Grics::Particle* p2, real cubeSize);
+
+		unsigned addContact(Grics::ParticleContact* contact, unsigned limit) const override;
+	};
+
 }
 
 #endif

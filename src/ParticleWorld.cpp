@@ -4,15 +4,25 @@ using namespace Grics;
 
 void ParticleWorld::startFrame()
 {
-	particleRegistration* reg = firstParticle;
-	while (reg)
+	for (Particles::iterator i = particles.begin(); i != particles.end(); i++)
 	{
-		// Remove all the forces from the accumualator
-		reg->particle->clearAccumulator();
-
-		// Get to the next registration 
-		reg = reg->next;
+		(*i)->clearAccumulator();
 	}
+}
+
+ParticleWorld::Particles& ParticleWorld::getParticles()
+{
+	return particles;
+}
+
+ParticleWorld::ContactGenerators& ParticleWorld::getContactGenerators()
+{
+	return contactGenerators;
+}
+
+ParticleForceRegistry& ParticleWorld::getForceRegistry()
+{
+	return registry;
 }
 
 Grics::ParticleWorld::ParticleWorld(unsigned maxContacts, unsigned iterations):
@@ -28,16 +38,17 @@ unsigned ParticleWorld::generateContacts()
 	unsigned limit = maxContacts;
 	ParticleContact* nextContact = contacts;
 
-	contactGenRegistration* reg = firstContactGen;
-	while (reg)
+	for (ContactGenerators::iterator g = contactGenerators.begin();
+		g != contactGenerators.end();
+		g++)
 	{
-		unsigned used = reg->gen->addContact(nextContact, limit);
+		unsigned used = (*g)->addContact(nextContact, limit);
 		limit -= used;
 		nextContact += used;
 
+		// We've run out of contacts to fill. This means we're missing
+		// contacts.
 		if (limit <= 0) break;
-
-		reg = reg->next;
 	}
 
 	return maxContacts - limit;
@@ -45,12 +56,12 @@ unsigned ParticleWorld::generateContacts()
 
 void ParticleWorld::integrate(real dt)
 {
-	particleRegistration* reg = firstParticle;
-	while (reg)
+	for (Particles::iterator p = particles.begin();
+		p != particles.end();
+		p++)
 	{
-		reg->particle->update(dt);
-
-		reg = reg->next;
+		// Remove all forces from the accumulator
+		(*p)->update(dt);
 	}
 }
 
@@ -64,7 +75,55 @@ void ParticleWorld::runPhysics(real dt)
 
 	if (usedContacts)
 	{
-		if (calculateIterations) resolver.setIterations(usedContacts * 2);
+		if (calculateIterations) resolver.setIterations(std::min(usedContacts * 2,(unsigned int)10));
 		resolver.resolveContacts(contacts, usedContacts, dt);
 	}
+}
+
+ParticleCubeContactGenerator::ParticleCubeContactGenerator(Grics::Particle* p1, Grics::Particle* p2, real cubeSize)
+	: p1(p1), p2(p2), halfExtent(cubeSize / 2.0f) {
+}
+
+unsigned ParticleCubeContactGenerator::addContact(ParticleContact* contact, unsigned limit) const {
+	if (limit == 0) return 0;
+
+	Vector3 pos1 = p1->getPosition();
+	Vector3 pos2 = p2->getPosition();
+
+	Vector3 delta = pos1 - pos2;
+	Vector3 overlap;
+
+	overlap.x = halfExtent * 2 - std::abs(delta.x);
+	overlap.y = halfExtent * 2 - std::abs(delta.y);
+	overlap.z = halfExtent * 2 - std::abs(delta.z);
+
+	if (overlap.x < 0 || overlap.y < 0 || overlap.z < 0)
+		return 0; // No collision
+
+	// Collision occurred — find axis of least penetration
+	float minPenetration = overlap.x;
+	Vector3 normal((delta.x > 0) ? 1 : -1, 0, 0);
+
+	if (overlap.y < minPenetration) {
+		minPenetration = overlap.y;
+		normal = Vector3(0, (delta.y > 0) ? 1 : -1, 0);
+	}
+
+	if (overlap.z < minPenetration) {
+		minPenetration = overlap.z;
+		normal = Vector3(0, 0, (delta.z > 0) ? 1 : -1);
+	}
+	const real slop = 0.01f;
+
+	//std::cout << "Contact generated! penetration = " << contact->penetration << "\n";
+
+	contact->particle[0] = p1;
+	contact->particle[1] = p2;
+	contact->contactNormal = normal;
+	contact->penetration = std::max(minPenetration - slop , (real)0.0f);
+	contact->restitution = 1.0f; // Tunable bounce factor
+
+	
+
+	return 1;
 }

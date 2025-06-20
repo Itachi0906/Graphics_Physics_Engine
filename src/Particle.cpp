@@ -1,4 +1,5 @@
 #include "Particle.h"
+#include <iostream>
 
 namespace Grics{
     void Particle::addForce(const Vector3 &forceVector)
@@ -19,7 +20,7 @@ namespace Grics{
         resultingAcc.addScaledVector(forceAccum, inverseMass);
         velocity.addScaledVector(resultingAcc, dt);
 
-        velocity *= real_pow(damping, dt);
+       // velocity *= real_pow(damping, dt);
 
         clearAccumulator();
     }
