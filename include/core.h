@@ -301,6 +301,7 @@ namespace Grics {
         /**
         * Holds the tensor matrix in array form.
         */
+    public:
         real data[9];
 
         Matrix3();
@@ -444,6 +445,7 @@ namespace Grics {
         /**
         * Holds the transform matrix in array form.
         */
+    public:
         real data[12];
 
         Matrix4 operator*(const Matrix4& o) const
