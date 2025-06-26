@@ -24,9 +24,9 @@ static inline void _calculateTransformMatrix(Matrix4 &transformMatrix, const Vec
 
 static inline void _checkInverseInertiaTensor(const Matrix3& inverseInertiaTensor)
 {
-	assert(inverseInertiaTensor.data[0] != 0 && inverseInertiaTensor.data[1] != 0 && inverseInertiaTensor.data[2] != 0);
-	assert(inverseInertiaTensor.data[3] != 0 && inverseInertiaTensor.data[4] != 0 && inverseInertiaTensor.data[5] != 0);
-	assert(inverseInertiaTensor.data[6] != 0 && inverseInertiaTensor.data[7] != 0 && inverseInertiaTensor.data[8] != 0);
+	assert(inverseInertiaTensor.data[0] != 0 || inverseInertiaTensor.data[1] != 0 || inverseInertiaTensor.data[2] != 0);
+	assert(inverseInertiaTensor.data[3] != 0 || inverseInertiaTensor.data[4] != 0 || inverseInertiaTensor.data[5] != 0);
+	assert(inverseInertiaTensor.data[6] != 0 || inverseInertiaTensor.data[7] != 0 || inverseInertiaTensor.data[8] != 0);
 }
 
 /** 

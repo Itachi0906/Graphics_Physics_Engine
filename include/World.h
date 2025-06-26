@@ -4,6 +4,7 @@
 
 #include "body.h"
 #include "Contacts.h"
+#include <vector>
 
 namespace Grics {
     /**
@@ -13,6 +14,10 @@ namespace Grics {
      */
     class World
     {
+    public:
+        typedef std::vector<RigidBody* > RigidBodies;
+        typedef std::vector<ContactGenerator*> ContactGenerators;
+    private:
         // ... other World data as before ...
         /**
          * True if the world should calculate the number of iterations
@@ -20,38 +25,14 @@ namespace Grics {
          */
         bool calculateIterations;
 
-        /**
-         * Holds a single rigid body in a linked list of bodies.
-         */
-        struct BodyRegistration
-        {
-            RigidBody* body;
-            BodyRegistration* next;
-        };
-
-        /**
-         * Holds the head of the list of registered bodies.
-         */
-        BodyRegistration* firstBody;
+        RigidBodies bodies;
 
         /**
          * Holds the resolver for sets of contacts.
          */
         ContactResolver resolver;
 
-        /**
-         * Holds one contact generators in a linked list.
-         */
-        struct ContactGenRegistration
-        {
-            ContactGenerator* gen;
-            ContactGenRegistration* next;
-        };
-
-        /**
-         * Holds the head of the list of contact generators.
-         */
-        ContactGenRegistration* firstContactGen;
+        ContactGenerators contactGenerator;
 
         /**
          * Holds an array of contacts, for filling by the contact
@@ -95,6 +76,9 @@ namespace Grics {
          */
         void startFrame();
 
+        RigidBodies& getRigidBodies();
+
+        ContactGenerators& getContactGenerators();
     };
 }
 

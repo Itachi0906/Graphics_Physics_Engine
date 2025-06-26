@@ -5,9 +5,7 @@ using namespace Grics;
 
 World::World(unsigned maxContacts, unsigned iterations)
     :
-    firstBody(NULL),
     resolver(iterations),
-    firstContactGen(NULL),
     maxContacts(maxContacts)
 {
     contacts = new Contact[maxContacts];
@@ -21,16 +19,22 @@ World::~World()
 
 void World::startFrame()
 {
-    BodyRegistration* reg = firstBody;
-    while (reg)
-    {
-        // Remove all forces from the accumulator
-        reg->body->clearAccumulators();
-        reg->body->calculateDerivedData();
 
-        // Get the next registration
-        reg = reg->next;
+    for (RigidBodies::iterator i = bodies.begin(); i != bodies.end();i++)
+    {
+        (*i)->clearAccumulators();
+        (*i)->calculateDerivedData();
     }
+}
+
+World::RigidBodies& World::getRigidBodies()
+{
+    return bodies;
+}
+
+World::ContactGenerators& World::getContactGenerators()
+{
+    return contactGenerator;
 }
 
 unsigned World::generateContacts()
@@ -38,38 +42,30 @@ unsigned World::generateContacts()
     unsigned limit = maxContacts;
     Contact* nextContact = contacts;
 
-    ContactGenRegistration* reg = firstContactGen;
-    while (reg)
+    for (ContactGenerators::iterator i = contactGenerator.begin(); i != contactGenerator.end();i++)
     {
-        unsigned used = reg->gen->addContact(nextContact, limit);
+        unsigned used = (*i)->addContact(nextContact, limit);
         limit -= used;
         nextContact += used;
 
         // We've run out of contacts to fill. This means we're missing
         // contacts.
         if (limit <= 0) break;
-
-        reg = reg->next;
     }
 
     // Return the number of contacts used.
     return maxContacts - limit;
 }
 
-void World::runPhysics(real duration)
+void World::runPhysics(real dt)
 {
     // First apply the force generators
     //registry.updateForces(duration);
 
-    // Then integrate the objects
-    BodyRegistration* reg = firstBody;
-    while (reg)
+    for (RigidBodies::iterator i = bodies.begin(); i != bodies.end();i++)
     {
-        // Remove all forces from the accumulator
-        reg->body->integrate(duration);
+        (*i)->integrate(dt);
 
-        // Get the next registration
-        reg = reg->next;
     }
 
     // Generate contacts
@@ -77,5 +73,5 @@ void World::runPhysics(real duration)
 
     // And process them
     if (calculateIterations) resolver.setIterations(usedContacts * 4);
-    resolver.resolveContacts(contacts, usedContacts, duration);
+    resolver.resolveContacts(contacts, usedContacts, dt);
 }

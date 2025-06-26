@@ -412,5 +412,30 @@ namespace Grics {
         virtual unsigned addContact(Contact* contact, unsigned limit) const = 0;
     };
 
+    // Dummy contact generator that keeps bodies above a plane at y=0
+    class GroundContactGenerator : public Grics::ContactGenerator {
+    public:
+        Grics::RigidBody* body;
+        Grics::real restitution;
+
+        GroundContactGenerator(Grics::RigidBody* b, Grics::real rest = 0.5f)
+            : body(b), restitution(rest) {
+        }
+
+        unsigned addContact(Grics::Contact* contact, unsigned limit) const override {
+            Grics::real y = body->getPosition().y;
+            if (y < 0.0f) {
+                contact->contactPoint = body->getPosition();
+                contact->contactPoint.y = 0;
+
+                contact->contactNormal = Grics::Vector3(0, 1, 0);
+                contact->penetration = -y;
+                contact->setBodyData(body, nullptr, 0.2f, restitution);
+                return 1;
+            }
+            return 0;
+        }
+    };
+
 }
 #endif
