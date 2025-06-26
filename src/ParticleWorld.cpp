@@ -61,7 +61,7 @@ void ParticleWorld::integrate(real dt)
 		p++)
 	{
 		// Remove all forces from the accumulator
-		(*p)->update(dt);
+		(*p)->integrate(dt);
 	}
 }
 

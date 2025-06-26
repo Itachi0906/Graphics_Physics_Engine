@@ -139,6 +139,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\CollideCoarse.cpp" />
+    <ClCompile Include="src\CollideFine.cpp" />
+    <ClCompile Include="src\Contacts.cpp" />
+    <ClCompile Include="src\ForceGenerator.cpp" />
     <ClCompile Include="src\body.cpp" />
     <ClCompile Include="src\core.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
@@ -150,6 +154,7 @@
     <ClCompile Include="src\ParticleForceGenerator.cpp" />
     <ClCompile Include="src\ParticleWorld.cpp" />
     <ClCompile Include="src\test.cpp" />
+    <ClCompile Include="src\World.cpp" />
     <ClCompile Include="Vendor\glad\src\glad.c" />
     <ClCompile Include="Vendor\imgui2\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="Vendor\imgui2\backends\imgui_impl_opengl3.cpp" />
@@ -161,8 +166,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\body.h" />
+    <ClInclude Include="include\CollideCoarse.h" />
+    <ClInclude Include="include\CollideFine.h" />
+    <ClInclude Include="include\Contacts.h" />
     <ClInclude Include="include\core.h" />
     <ClInclude Include="include\Cube.h" />
+    <ClInclude Include="include\ForceGenerator.h" />
     <ClInclude Include="include\Grid.h" />
     <ClInclude Include="include\Mesh.h" />
     <ClInclude Include="include\Particle.h" />
@@ -171,6 +180,7 @@
     <ClInclude Include="include\ParticleWorld.h" />
     <ClInclude Include="include\precision.h" />
     <ClInclude Include="include\Shader.h" />
+    <ClInclude Include="include\World.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\gridShader.frag" />

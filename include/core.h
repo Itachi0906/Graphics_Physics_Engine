@@ -4,6 +4,32 @@
 #include "precision.h"
 
 namespace Grics {
+    /**
+     * Holds the value for energy under which a body will be put to
+     * sleep. This is a global value for the whole solution.  By
+     * default it is 0.1, which is fine for simulation when gravity is
+     * about 20 units per second squared, masses are about one, and
+     * other forces are around that of gravity. It may need tweaking
+     * if your simulation is drastically different to this.
+     */
+    extern real sleepEpsilon;
+
+    /**
+     * Sets the current sleep epsilon value: the kinetic energy under
+     * which a body may be put to sleep. Bodies are put to sleep if
+     * they appear to have a stable kinetic energy less than this
+     * value. For simulations that often have low values (such as slow
+     * moving, or light objects), this may need reducing.
+     *
+     * The value is global; all bodies will use it.
+     */
+    void setSleepEpsilon(real value);
+
+    /**
+     * Gets the current value of the sleep epsilon parameter.
+     */
+    real getSleepEpsilon();
+
     class Vector3 {
     public:
         /**Holds the value along x-axis*/
@@ -18,6 +44,9 @@ namespace Grics {
         real pad;
 
     public:
+
+        const static Vector3 GRAVITY;
+
         /**the default constructor creates a zero vector*/
         Vector3() : x(0), y(0), z(0) {}
         /**
@@ -25,6 +54,21 @@ namespace Grics {
         * components.
         */
         Vector3(const real x, const real y, const real z) : x(x), y(y), z(z) {}
+
+
+        real operator[](unsigned i) const
+        {
+            if (i == 0) return x;
+            if (i == 1) return y;
+            return z;
+        }
+
+        real& operator[](unsigned i)
+        {
+            if (i == 0) return x;
+            if (i == 1) return y;
+            return z;
+        }
 
         /** Multiplies this vector by the given scalar. */
         void operator*=(const real value)
@@ -41,7 +85,7 @@ namespace Grics {
         }
 
         /**Adds the given vector to this*/
-        void operator+=(const Vector3& v)
+        void operator+=(const Vector3& v) 
         {
             x += v.x;
             y += v.y;
@@ -49,13 +93,13 @@ namespace Grics {
         }
 
         /**Returns a copy of given vector added to this*/
-        Vector3 operator+(const Vector3& v)
+        Vector3 operator+(const Vector3& v) const
         {
             return Vector3(x + v.x, y + v.y, z + v.z);
         }
 
         /**Subtracts the given vector to this*/
-        void operator-=(const Vector3& v)
+        void operator-=(const Vector3& v) 
         {
             x -= v.x;
             y -= v.y;
@@ -63,7 +107,7 @@ namespace Grics {
         }
 
         /**Returns a copy of given vector subtracted to this*/
-        Vector3 operator-(const Vector3& v)
+        Vector3 operator-(const Vector3& v) const 
         {
             return Vector3(x - v.x, y - v.y, z - v.z);
         }
@@ -148,6 +192,7 @@ namespace Grics {
             y = -y;
             z = -z;
         }
+
 
         /**Gets the magnitude of this vector*/
         real magnitude() const
@@ -304,7 +349,10 @@ namespace Grics {
     public:
         real data[9];
 
-        Matrix3();
+        Matrix3()
+        {
+            data[0] = data[1] = data[2] = data[3] = data[4] = data[5] = data[6] = data[7] = data[8] = 0;
+        }
 
         Matrix3(const real o1, const real o2, const real o3, const real o4, const real o5, const real o6, const real o7, const real o8, const real o9)
         {
@@ -327,6 +375,18 @@ namespace Grics {
             }
         }
 
+        /**
+         * Transform the given vector by this matrix.
+         */
+        Vector3 operator*(const Vector3& vector) const
+        {
+            return Vector3(
+                vector.x * data[0] + vector.y * data[1] + vector.z * data[2],
+                vector.x * data[3] + vector.y * data[4] + vector.z * data[5],
+                vector.x * data[6] + vector.y * data[7] + vector.z * data[8]
+            );
+        }
+
         /** 
         * Returns a matrix that is this matrix multiplied by the given 
         * other matrix.
@@ -347,6 +407,59 @@ namespace Grics {
                 data[6] * o.data[2] + data[7] * o.data[5] + data[8] * o.data[8]
                 });
         }
+
+        /**
+         * Multiplies this matrix in place by the given other matrix.
+         */
+        void operator*=(const Matrix3& o)
+        {
+            real t1;
+            real t2;
+            real t3;
+
+            t1 = data[0] * o.data[0] + data[1] * o.data[3] + data[2] * o.data[6];
+            t2 = data[0] * o.data[1] + data[1] * o.data[4] + data[2] * o.data[7];
+            t3 = data[0] * o.data[2] + data[1] * o.data[5] + data[2] * o.data[8];
+            data[0] = t1;
+            data[1] = t2;
+            data[2] = t3;
+
+            t1 = data[3] * o.data[0] + data[4] * o.data[3] + data[5] * o.data[6];
+            t2 = data[3] * o.data[1] + data[4] * o.data[4] + data[5] * o.data[7];
+            t3 = data[3] * o.data[2] + data[4] * o.data[5] + data[5] * o.data[8];
+            data[3] = t1;
+            data[4] = t2;
+            data[5] = t3;
+
+            t1 = data[6] * o.data[0] + data[7] * o.data[3] + data[8] * o.data[6];
+            t2 = data[6] * o.data[1] + data[7] * o.data[4] + data[8] * o.data[7];
+            t3 = data[6] * o.data[2] + data[7] * o.data[5] + data[8] * o.data[8];
+            data[6] = t1;
+            data[7] = t2;
+            data[8] = t3;
+        }
+
+        /**
+         * Multiplies this matrix in place by the given scalar.
+         */
+        void operator*=(const real scalar)
+        {
+            data[0] *= scalar; data[1] *= scalar; data[2] *= scalar;
+            data[3] *= scalar; data[4] *= scalar; data[5] *= scalar;
+            data[6] *= scalar; data[7] *= scalar; data[8] *= scalar;
+        }
+
+        /**
+         * Does a component-wise addition of this matrix and the given
+         * matrix.
+         */
+        void operator+=(const Matrix3& o)
+        {
+            data[0] += o.data[0]; data[1] += o.data[1]; data[2] += o.data[2];
+            data[3] += o.data[3]; data[4] += o.data[4]; data[5] += o.data[5];
+            data[6] += o.data[6]; data[7] += o.data[7]; data[8] += o.data[8];
+        }
+
         /** 
         * Sets the matrix to be the inverse of the given matrix. 
         */
@@ -433,6 +546,53 @@ namespace Grics {
             data[6] = 2 * q.i * q.k + 2 * q.j * q.r; 
             data[7] = 2 * q.j * q.k - 2 * q.i * q.r; 
             data[8] = 1 - (2 * q.i * q.i + 2 * q.j * q.j);
+        }
+
+        /**
+         * Sets the matrix values from the given three vector components.
+         * These are arranged as the three columns of the vector.
+         */
+        void setComponents(const Vector3& compOne, const Vector3& compTwo,
+            const Vector3& compThree)
+        {
+            data[0] = compOne.x;
+            data[1] = compTwo.x;
+            data[2] = compThree.x;
+            data[3] = compOne.y;
+            data[4] = compTwo.y;
+            data[5] = compThree.y;
+            data[6] = compOne.z;
+            data[7] = compTwo.z;
+            data[8] = compThree.z;
+
+        }
+
+        /**
+        * Transform the given vector by this matrix
+        */
+        Vector3 transform(const Vector3& vector) const
+        {
+            return (*this) * vector;
+        }
+
+        Vector3 transformTranspose(const Vector3& vector) const
+        {
+            return Vector3(
+                vector.x * data[0] + vector.y * data[3] + vector.z * data[6],
+                vector.x * data[1] + vector.y * data[4] + vector.z * data[7],
+                vector.x * data[2] + vector.y * data[5] + vector.z * data[8]
+            );
+        }
+
+        void setSkewSymmetric(const Vector3 vector)
+        {
+            data[0] = data[4] = data[8] = 0;
+            data[1] = -vector.z;
+            data[2] = vector.y;
+            data[3] = vector.z;
+            data[5] = -vector.x;
+            data[6] = -vector.y;
+            data[7] = vector.x;
         }
     };
 
@@ -554,6 +714,19 @@ namespace Grics {
                 vector.x * data[1] + vector.y * data[5] + vector.z * data[9],
                 vector.x * data[2] + vector.y * data[6] + vector.z * data[10]
             );
+        }
+
+        /**
+        * Transform the given vector by this matrix
+        */
+        Vector3 transform(const Vector3& vector) const
+        {
+            return (*this) * vector;
+        }
+
+        Vector3 getAxisVector(int i) const
+        {
+            return Vector3(data[i], data[i + 4], data[i + 8]);
         }
     };
 }

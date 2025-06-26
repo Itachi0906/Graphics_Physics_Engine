@@ -8,7 +8,7 @@ namespace Grics{
         forceAccum += forceVector;
     }
 
-    void Particle::update(real dt)
+    void Particle::integrate(real dt)
     {
         assert(dt > 0.0);
         /**

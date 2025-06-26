@@ -15,8 +15,6 @@ namespace Grics {
     class Particle
     {
     private:
-        Vector3 gravity = Vector3(0.0f,-9.81f,0.0f);
-
         /**
          * Holds the linear position of this particle in
          * world space
@@ -86,7 +84,7 @@ namespace Grics {
         * linear approximation of the correct integral. For this reason it
         * may be inaccurate in some cases.
         */
-        void update(real dt);
+        void integrate(real dt);
         void clearAccumulator();
         void drawParticle(Mesh m,Mesh::shapeType shape,Shader &shader);
         
