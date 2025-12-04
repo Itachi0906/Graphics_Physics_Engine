@@ -33,8 +33,6 @@ This is my attempt on making a full fledged Graphics + Physics engine. The major
 Right now You can only build using Visual studio Community 2022 (x86) but please feel free to build it yourself as all the external dependencies is included in the project files.
 
 ## Future Ideas
-- Physics simulation for particles and rigid bodies
-- Collision detection
 - Lighting & shadows
 - Texture support
 
